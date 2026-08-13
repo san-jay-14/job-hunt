@@ -13,13 +13,13 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@types/string-similarity": "^4.0.2",
-    "prisma": "^7.9.1",
+    "prisma": "^6.19.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
-    "@prisma/client": "^7.9.1",
+    "@prisma/client": "^6.19.3",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "googleapis": "^174.0.1",

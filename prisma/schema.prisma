@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  source      String    // "adzuna" | "wellfound" | "linkedin"
+  sourceId    String?
+  title       String
+  company     String
+  location    String
+  workType    String?   // "remote" | "onsite" | "hybrid" | null if unknown
+  roleType    String?   // "intern" | "fresher" | "contract" | "fulltime"
+  description String
+  applyUrl    String
+  postedAt    DateTime?
+  dedupeKey   String    @unique
+  fitScore    Int?
+  fitReason   String?
+  verified    Boolean   @default(false)
+  redFlags    String[]  @default([])
+  delivered   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([fitScore])
+  @@index([createdAt])
+}
+
+model RunLog {
+  id         String    @id @default(cuid())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String    // "success" | "partial" | "failed"
+  jobsFound  Int       @default(0)
+  jobsNew    Int       @default(0)
+  errors     String[]  @default([])
+}
