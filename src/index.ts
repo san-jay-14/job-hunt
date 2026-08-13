@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { prisma } from "./lib/db";
 import { fetchAdzunaJobs } from "./connectors/adzuna";
+import { fetchWellfoundJobs } from "./connectors/wellfound";
 import { normalizeJobs } from "./pipeline/normalize";
 import { dedupeJobs } from "./pipeline/dedupe";
 import { classifyJobs } from "./pipeline/classify";
@@ -20,7 +21,8 @@ function startOfToday(): Date {
 }
 
 /**
- * Full pipeline: collect (Adzuna) → normalize → dedupe → store → deliver.
+ * Full pipeline: collect (Adzuna + Wellfound) → normalize → dedupe → store →
+ * classify → deliver.
  *
  * Each stage is wrapped so a single failure is recorded and the run continues
  * rather than crashing. A RunLog row is opened at the start and finalized at
@@ -36,18 +38,26 @@ async function main(): Promise<void> {
   const run = await prisma.runLog.create({ data: { status: "partial" } });
 
   try {
-    // 2. Collect from Adzuna (per-keyword failures are already handled inside
-    //    the connector; this guard catches a total failure of the source).
-    let raw: RawJob[] = [];
+    // 2. Collect from each source. Per-keyword failures are handled inside the
+    //    connectors; these guards catch a total failure of one source so the
+    //    others still contribute (and the run is marked "partial").
+    const raw: RawJob[] = [];
     try {
-      raw = await fetchAdzunaJobs();
-      jobsFound = raw.length;
-      console.log(`[pipeline] collected ${jobsFound} raw listings`);
+      raw.push(...(await fetchAdzunaJobs()));
     } catch (err) {
       const msg = `adzuna: ${errMsg(err)}`;
       console.error(`[pipeline] ${msg}`);
       errors.push(msg);
     }
+    try {
+      raw.push(...(await fetchWellfoundJobs()));
+    } catch (err) {
+      const msg = `wellfound: ${errMsg(err)}`;
+      console.error(`[pipeline] ${msg}`);
+      errors.push(msg);
+    }
+    jobsFound = raw.length;
+    console.log(`[pipeline] collected ${jobsFound} raw listings`);
 
     // 3. Normalize + dedupe, then insert the genuinely new ones.
     try {
