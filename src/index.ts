@@ -4,6 +4,7 @@ import { prisma } from "./lib/db";
 import { fetchAdzunaJobs } from "./connectors/adzuna";
 import { normalizeJobs } from "./pipeline/normalize";
 import { dedupeJobs } from "./pipeline/dedupe";
+import { classifyJobs } from "./pipeline/classify";
 import { sendDigest } from "./lib/telegram";
 import type { RawJob } from "./types";
 
@@ -63,8 +64,14 @@ async function main(): Promise<void> {
       errors.push(msg);
     }
 
-    // 4-6. Deliver today's undelivered jobs, then mark them delivered.
+    // 4-6. Classify today's undelivered jobs, then deliver, then mark delivered.
     try {
+      const pending = await prisma.job.findMany({
+        where: { delivered: false, createdAt: { gte: startOfToday() } },
+      });
+      await classifyJobs(pending);
+
+      // Re-query so the digest sees the freshly-written fit scores.
       const toDeliver = await prisma.job.findMany({
         where: { delivered: false, createdAt: { gte: startOfToday() } },
         orderBy: [{ fitScore: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
@@ -78,7 +85,7 @@ async function main(): Promise<void> {
           data: { delivered: true },
         });
       }
-      console.log(`[pipeline] delivered ${toDeliver.length} jobs`);
+      console.log(`[pipeline] classified ${pending.length}, delivered ${toDeliver.length} jobs`);
     } catch (err) {
       const msg = `deliver: ${errMsg(err)}`;
       console.error(`[pipeline] ${msg}`);

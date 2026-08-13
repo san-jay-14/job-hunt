@@ -2,3 +2,8 @@ node_modules
 .env
 dist
 *.log
+
+# Personal resume — kept locally, never committed (repo has a public remote).
+resume.txt
+*_resume.txt
+*resume*.txt
