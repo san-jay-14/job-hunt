@@ -5,5 +5,9 @@ dist
 
 # Personal resume — kept locally, never committed (repo has a public remote).
 resume.txt
+resume.tex
 *_resume.txt
 *resume*.txt
+
+# Generated tailored resumes
+output/

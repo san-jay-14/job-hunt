@@ -9,6 +9,7 @@ datasource db {
 
 model Job {
   id          String    @id @default(cuid())
+  ref         Int       @unique @default(autoincrement()) // short human-friendly id for CLI selection
   source      String    // "adzuna" | "wellfound" | "linkedin"
   sourceId    String?
   title       String

@@ -14,6 +14,13 @@ import Anthropic from "@anthropic-ai/sdk";
  */
 export const CLASSIFIER_MODEL = "claude-haiku-4-5";
 
+/**
+ * Model used for resume tailoring (the `optimize` command). This is a
+ * user-triggered, low-volume, quality-sensitive task, so it uses a powerful
+ * model rather than the cheap classifier model.
+ */
+export const RESUME_MODEL = "claude-opus-5";
+
 let client: Anthropic | null = null;
 
 /** Lazily-constructed shared Anthropic client. */

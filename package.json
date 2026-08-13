@@ -7,6 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
+    "optimize": "ts-node src/optimize.ts",
     "gmail:auth": "ts-node scripts/getGmailRefreshToken.ts"
   },
   "license": "UNLICENSED",

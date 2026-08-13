@@ -37,7 +37,7 @@ function postedAgo(postedAt: Date | null): string | null {
 /** Format one job as a Markdown block. */
 function formatBlock(job: Job): string {
   const lines: string[] = [];
-  lines.push(`*${md(job.title)}* — ${md(job.company)}`);
+  lines.push(`#${job.ref} *${md(job.title)}* — ${md(job.company)}`);
 
   const meta = [job.location ? md(job.location) : "", job.workType ?? ""]
     .filter((part) => part.length > 0)
@@ -117,7 +117,9 @@ export async function sendDigest(jobs: Job[]): Promise<void> {
   }
 
   const sorted = sortForDigest(jobs);
-  const header = `🧑‍💻 *Job digest* — ${jobs.length} ${jobs.length === 1 ? "match" : "matches"}`;
+  const header =
+    `🧑‍💻 *Job digest* — ${jobs.length} ${jobs.length === 1 ? "match" : "matches"}\n` +
+    `_Tailor your resume: npm run optimize -- #id_`;
   const blocks = sorted.map(formatBlock);
   const messages = packMessages(header, blocks);
 
@@ -155,6 +157,7 @@ if (require.main === module) {
       roleType: "intern",
       applyUrl: "https://example.com/apply/1",
       dedupeKey: "fake1",
+      ref: 91,
       fitScore: 87,
       postedAt: now, // "posted today"
     },
@@ -169,6 +172,7 @@ if (require.main === module) {
       roleType: "intern",
       applyUrl: "https://example.com/apply/2",
       dedupeKey: "fake2",
+      ref: 92,
       fitScore: 72,
       postedAt: daysAgo(3), // "posted 3 days ago"
     },
@@ -183,6 +187,7 @@ if (require.main === module) {
       roleType: "fresher",
       applyUrl: "https://example.com/apply/3",
       dedupeKey: "fake3",
+      ref: 93,
       fitScore: null, // no score yet — demonstrates "fit score once it exists"
       postedAt: null, // no date — the posted line is omitted
     },
