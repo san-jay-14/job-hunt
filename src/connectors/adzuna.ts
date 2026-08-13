@@ -7,17 +7,7 @@
  * later in normalization (Phase 3).
  */
 
-/** Raw, source-shaped job as it comes out of a connector, before normalization. */
-export interface RawJob {
-  source: "adzuna" | "wellfound" | "linkedin";
-  sourceId: string | null;
-  title: string;
-  company: string;
-  location: string;
-  description: string;
-  applyUrl: string;
-  postedAt: Date | null;
-}
+import type { RawJob } from "../types";
 
 /** Shape of a single result in the Adzuna search response (fields we use). */
 interface AdzunaResult {
