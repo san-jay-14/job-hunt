@@ -21,6 +21,19 @@ function md(text: string): string {
   return text.replace(/[_*`\[]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Human-friendly "posted X days ago" for a job's postedAt. Returns null when the
+ * source didn't give a date, so the line is simply omitted rather than faked.
+ */
+function postedAgo(postedAt: Date | null): string | null {
+  if (!postedAt || isNaN(postedAt.getTime())) return null;
+  const days = Math.floor((Date.now() - postedAt.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return "posted just now";
+  if (days === 0) return "posted today";
+  if (days === 1) return "posted 1 day ago";
+  return `posted ${days} days ago`;
+}
+
 /** Format one job as a Markdown block. */
 function formatBlock(job: Job): string {
   const lines: string[] = [];
@@ -33,6 +46,10 @@ function formatBlock(job: Job): string {
 
   // Fit score only appears once scoring exists (Phase 6); null until then.
   if (job.fitScore != null) lines.push(`⭐ Fit: ${job.fitScore}/100`);
+
+  // Posted-time, omitted when the source gave no date.
+  const posted = postedAgo(job.postedAt);
+  if (posted) lines.push(`🕒 ${posted}`);
 
   lines.push(`🔗 ${job.applyUrl}`);
   return lines.join("\n");
@@ -115,6 +132,7 @@ export async function sendDigest(jobs: Job[]): Promise<void> {
 if (require.main === module) {
   require("dotenv").config();
   const now = new Date();
+  const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
   const base = {
     sourceId: null,
     description: "",
@@ -138,6 +156,7 @@ if (require.main === module) {
       applyUrl: "https://example.com/apply/1",
       dedupeKey: "fake1",
       fitScore: 87,
+      postedAt: now, // "posted today"
     },
     {
       ...base,
@@ -151,6 +170,7 @@ if (require.main === module) {
       applyUrl: "https://example.com/apply/2",
       dedupeKey: "fake2",
       fitScore: 72,
+      postedAt: daysAgo(3), // "posted 3 days ago"
     },
     {
       ...base,
@@ -164,6 +184,7 @@ if (require.main === module) {
       applyUrl: "https://example.com/apply/3",
       dedupeKey: "fake3",
       fitScore: null, // no score yet — demonstrates "fit score once it exists"
+      postedAt: null, // no date — the posted line is omitted
     },
   ];
 
