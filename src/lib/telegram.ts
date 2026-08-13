@@ -80,8 +80,9 @@ async function sendMessage(token: string, chatId: string, text: string): Promise
 }
 
 /**
- * Send a digest of jobs to the configured Telegram chat. No-op (nothing sent)
- * when there are no jobs, so an empty run never produces a broken message.
+ * Send a digest of jobs to the configured Telegram chat. When there are no new
+ * jobs, it sends a short "no new openings today" note instead — so a quiet day
+ * still confirms the run happened, rather than leaving you wondering.
  */
 export async function sendDigest(jobs: Job[]): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -93,7 +94,8 @@ export async function sendDigest(jobs: Job[]): Promise<void> {
   }
 
   if (jobs.length === 0) {
-    console.log("[telegram] no jobs to deliver — skipping send");
+    await sendMessage(token, chatId, "🧑‍💻 *Job digest* — no new openings today.");
+    console.log("[telegram] no new jobs — sent 'no new openings today' note");
     return;
   }
 
