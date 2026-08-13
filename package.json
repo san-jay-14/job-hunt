@@ -1,0 +1,28 @@
+{
+  "name": "job-hunt-pipeline",
+  "version": "1.0.0",
+  "description": "Personal single-user job-hunt pipeline: pulls fresh listings, filters fakes, scores against a resume, delivers top matches to Telegram.",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "gmail:auth": "ts-node scripts/getGmailRefreshToken.ts"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/string-similarity": "^4.0.2",
+    "prisma": "^7.9.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
+    "@prisma/client": "^7.9.1",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "googleapis": "^174.0.1",
+    "string-similarity": "^4.0.4"
+  }
+}
