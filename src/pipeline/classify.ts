@@ -43,22 +43,30 @@ export function ruleBasedFlags(description: string): string[] {
   return RED_FLAG_PHRASES.filter((phrase) => text.includes(phrase));
 }
 
+let resumeLoaded = false;
 let cachedResume: string | null = null;
 
-/** Load resume.txt from the repo root (cached for the process). */
-function loadResume(): string {
-  if (cachedResume === null) {
-    const resumePath = path.resolve(process.cwd(), "resume.txt");
-    let content: string;
-    try {
-      content = readFileSync(resumePath, "utf8").trim();
-    } catch {
-      throw new Error(
-        `Could not read resume at ${resumePath} — add a resume.txt at the repo root (see Phase 6).`
-      );
-    }
-    if (!content) throw new Error("resume.txt is empty");
-    cachedResume = content;
+/**
+ * Load the résumé text, cached for the process. Prefers the RESUME_TEXT env var
+ * (used in deployment, since resume.txt is gitignored and absent in the
+ * container) and falls back to a local resume.txt. Returns null if neither is
+ * available, so classification can degrade gracefully instead of crashing.
+ */
+function loadResume(): string | null {
+  if (resumeLoaded) return cachedResume;
+  resumeLoaded = true;
+
+  const fromEnv = process.env.RESUME_TEXT?.trim();
+  if (fromEnv) {
+    cachedResume = fromEnv;
+    return cachedResume;
+  }
+
+  try {
+    const content = readFileSync(path.resolve(process.cwd(), "resume.txt"), "utf8").trim();
+    cachedResume = content || null;
+  } catch {
+    cachedResume = null;
   }
   return cachedResume;
 }
@@ -154,7 +162,12 @@ export async function classifyJobs(jobs: Job[]): Promise<void> {
   if (jobs.length === 0) return;
 
   const resume = loadResume();
-  const client = getAnthropic();
+  const client = resume ? getAnthropic() : null;
+  if (!resume) {
+    console.warn(
+      "[classify] no résumé (set RESUME_TEXT env or add resume.txt) — running rule flags only, skipping LLM scoring"
+    );
+  }
 
   for (const job of jobs) {
     const flags = ruleBasedFlags(job.description);
@@ -166,6 +179,9 @@ export async function classifyJobs(jobs: Job[]): Promise<void> {
       console.log(`[classify] "${job.title}" flagged (rule): ${flags.join(", ")} — skipping LLM`);
       continue;
     }
+
+    // No résumé → skip LLM scoring, leave fitScore null (still delivered).
+    if (!resume || !client) continue;
 
     const result = await scoreJob(client, resume, job);
     if (!result) {

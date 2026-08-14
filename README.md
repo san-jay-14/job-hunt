@@ -52,3 +52,37 @@ model's help if LaTeX errors occur), and writes
 
 The optimizer needs `ANTHROPIC_API_KEY` and a running database (the same
 `DATABASE_URL` the pipeline uses), since it reads the stored job by its `#id`.
+
+## Deployment (Railway, daily cron)
+
+The pipeline is a run-once-and-exit job. Railway's cron scheduler starts the
+container, runs it, and it exits — [`railway.json`](railway.json) declares the
+schedule (`30 1 * * *` = 01:30 UTC / 07:00 IST; change to your wake time). The
+`optimize` command and `pdflatex` are **not** part of deployment — they're local.
+
+Repo-side config is already in place: `railway.json`, a `postinstall` that runs
+`prisma generate`, Node pinned to `>=20`, and a start command that applies
+migrations before each run:
+
+```
+npx prisma migrate deploy && npm run build && npm run start
+```
+
+**One-time setup on Railway** (needs your account — done in the Railway CLI /
+dashboard):
+
+1. `npm i -g @railway/cli && railway login`
+2. `railway init` in the repo root.
+3. Add a Postgres plugin (`railway add` or the dashboard). Railway sets
+   `DATABASE_URL` automatically.
+4. In the service **Variables** tab, set every var from `.env.example` except
+   `DATABASE_URL`: `ANTHROPIC_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`,
+   `ADZUNA_COUNTRY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SEARCH_KEYWORDS`,
+   `SEARCH_LOCATION`, and **`RESUME_TEXT`** (paste your `resume.txt` contents —
+   the file is gitignored, so the container needs the résumé via this var, or
+   scoring is skipped).
+5. `railway up` to deploy (or connect the GitHub repo for auto-deploy on push).
+
+**Verify:** trigger a manual run from the dashboard (or set a near-future
+`cronSchedule` temporarily). A run is healthy when a real digest lands in
+Telegram and the deployed Postgres has a `RunLog` row with `status = "success"`.
